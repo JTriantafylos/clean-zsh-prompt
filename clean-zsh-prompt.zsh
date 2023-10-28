@@ -16,6 +16,12 @@ source ${0:a:h}/zsh-async/async.zsh
 # The list that will hold the names of each module's associative array containing that module's parameters
 declare -a CZP_PROMPT_MODULES=()
 
+# An array that will contain the content of each prompt module, to be expanded in $prompt
+declare -a CZP_PSVAR=()
+
+# Required to allow for proper expansion of $CZP_PSVAR in $prompt
+setopt promptsubst
+
 # The string that will be printed out in front of where the shell input will actually show up
 declare CZP_PROMPT_CHARACTER="❯ "
 
@@ -77,39 +83,25 @@ function czp_add_module() {
 #
 # Configures the $prompt variable to support as many modules are currently loaded
 function czp_configure_prompt() {
-    # Statically set the second line of the prompt to be the prompt character
-    psvar[1]="${CZP_PROMPT_CHARACTER}"
-
     # Declare and clear the prompt
     declare -g prompt=""
 
-    # Add a %v prompt escape for each expected prompt module
+    # Add a $CZP_PSVAR parameter for each expected prompt module
     for ((i = 1; i <= "${#CZP_PROMPT_MODULES}"; i++)); do
-        # The quotes are surrounding the parameter expansion are necessary to allow prompt module fields to be empty strings
-        # Parameter expansion explanation
-        #  - P: Expand the names of the inner associative arrays (for each module) into the array values
-        #  - k: Replace the array values with their respective key names
-        #  - v: Add back the array values, following their respective key names
-        #  - @: Since the whole expression is in double quotes, expand each array element into its own word, each surrounded by double quotes
-        local -A MODULE=("${(Pvk@)CZP_PROMPT_MODULES[${i}]}")
-        prompt+="%F{${MODULE[Color]}}%$(( ${i} + 1 ))v%f"
-        # Add the separator if we aren't at the end
-        if [[ i -lt "${#CZP_PROMPT_MODULES}" ]]; then
-            prompt+="${CZP_MODULE_SEPARATOR}"
-        fi
+        prompt+='${CZP_PSVAR['${i}']}'
     done
 
     # Add a new line
-    prompt+="${CZP_NEWLINE}"
-    # Add the second line of the prompt, just the single element at $psvar[1]
-    prompt+="%F{${CZP_PROMPT_CHARACTER_COLOR}}%1v%f"
+    prompt+='${CZP_NEWLINE}'
+    # Add the second line of the prompt, just the prompt character
+    prompt+='%F{${CZP_PROMPT_CHARACTER_COLOR}}${CZP_PROMPT_CHARACTER}%f'
 
 }
 
 # czp_prompt_module_async()
 #
-# Asynchronously executes a prompt module's command and inputs the module's output into $psvar
-# so that it shows up in the prompt next time the prompt is refreshed
+# Asynchronously executes a prompt module's command so that it shows up in the prompt next time the prompt is refreshed
+# The callback function will handle putting the output into $CZP_PSVAR
 # To be called from a zsh-async worker
 #
 # $1 <Order Number>: The 1-indexed order that this module will be displayed in, where 1 is the left-most module in the prompt
@@ -138,8 +130,7 @@ function czp_prompt_module_async() {
 
     # Don't generate any output if the content of the prompt was empty
     if [[ -n "${PROMPT_MODULE_CONTENT}" ]]; then
-        # TODO: Consider whether %b or %q should be used here instead of %s
-        printf "%s%s%s" "${PROMPT_MODULE_PREFIX}" "${PROMPT_MODULE_CONTENT}" "${PROMPT_MODULE_SUFFIX}"
+        print "${PROMPT_MODULE_PREFIX}%F{${PROMPT_MODULE_COLOR}}${PROMPT_MODULE_CONTENT}%f${PROMPT_MODULE_SUFFIX}"
     fi
 
     # Return the order number of this module so the callback knows where to put its output
@@ -167,7 +158,18 @@ function czp_prompt_module_async_callback() {
     local -i HAS_NEXT="${6}"
     local -i PROMPT_ORDER_NUM="${RETURN_CODE}"
 
-    psvar[$(( "${PROMPT_ORDER_NUM}" + 1 ))]="${STDOUT_RESULT}"
+    # Don't bother doing any more work if the module is empty
+    if [[ -z "${STDOUT_RESULT}" ]]; then
+        return
+    fi
+
+    # Put the stdout output from the module into the appropriate $CZP_PSVAR slot
+    CZP_PSVAR[${PROMPT_ORDER_NUM}]="${STDOUT_RESULT}"
+
+    # Add the separator if we have output and aren't the last module
+    if [[ "${PROMPT_ORDER_NUM}" -lt "${#CZP_PROMPT_MODULES}" ]]; then
+        CZP_PSVAR[${PROMPT_ORDER_NUM}]+="${CZP_MODULE_SEPARATOR}"
+    fi
 
     # Check if there are any more results buffered
     if [[ "${HAS_NEXT}" -eq 0 ]]; then
