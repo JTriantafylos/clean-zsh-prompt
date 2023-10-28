@@ -44,36 +44,92 @@ declare -r CZP_MODULE_NAME_PREFIX="CZP_PROMPT_MODULE_"
 # FUNCTIONS #
 #############
 
-# czp_add_module()
+# __czp_print()
+#
+# Prints a message to stdout
+#
+# $1 <Message>: The message to be printed to stdout
+#
+function __czp_print() {
+    print -- "${1}"
+}
+
+# __czp_print_error()
+#
+# Prints a message to stderr
+#
+# $1 <Message>: The message to be printed to stderr
+#
+function __czp_print_error() {
+    >&2 print -- "${1}"
+}
+
+# __czp_add_module()
 #
 # Adds a new module to CZP
 #
-# $1 <Module Name>: A unique module name
-# $2 <Prefix>: The constant prefix text that will come before the module
-# $3 <Suffix>: The constant suffix text that will come after the module
-# $4 <Color>: The text color that the module will be displayed in
-# $5 <Shell>: Whether or not the module's command field is to be interpreted as a Zsh prompt escape sequence, or to be executed as a shell command
-# $6 <Command>: The Zsh prompt escape sequence, or shell command that will be executed to provide the text content of the module
-function czp_add_module() {
+# $* <Arguments>: Arguments to be passed into zparseopts, see $USAGE_MSG for more information
+function __czp_add_module() {
+    local -r USAGE_MSG="usage: czprompt add [<options>]
+
+    -h, --help     prints this usage message
+    --name         the name of the module
+    --prefix       unstyled text that will be displayed before the module
+    --suffix       unstyled text that will be displayed after the module
+    --color        the color that the module's content will be displayed in
+    -s, --shell    treat the --command input as a shell command rather than a Zsh prompt escape sequence
+    --command      the Zsh prompt escape sequence, or shell command (depending on the --shell option), that will generate the module's content"
+
+    # Option handling
+    local -a HELP NAME PREFIX SUFFIX COLOR SHELL COMMAND
+    zparseopts -E -F -D -K -- {h,-help}=HELP -name:=NAME -prefix:=PREFIX -suffix:=SUFFIX -color:=COLOR {s,-shell}=SHELL -command:=COMMAND
+
+    # Print usage message
+    if [[ -n "${HELP}" ]]; then
+        __czp_print "${USAGE_MSG}"
+        return
+    fi
+
+    # Verify that a name was provided
+    if [[ -z "${NAME[2]}" ]]; then
+        __czp_print_error "error: --name argument is mandatory!"
+        __czp_print_error "${USAGE_MSG}"
+        return
+    fi
+
+    # Verify that a command was provided
+    if [[ -z "${COMMAND[2]}" ]]; then
+        __czp_print_error "error: --command argument is mandatory!"
+        __czp_print_error "${USAGE_MSG}"
+        return
+    fi
+
     # Add the CZP_PROMPT_MODULE_ prefix to the unique module name argument
-    local MODULE_NAME="${CZP_MODULE_NAME_PREFIX}${1}"
+    local MODULE_NAME="${CZP_MODULE_NAME_PREFIX}${NAME[2]}"
+
+    # Verify that we don't already have a module with the same name
+    if [[ -n "${(P)MODULE_NAME}" ]]; then
+        __czp_print_error "error: a module with name '${NAME[2]}' already exists!"
+        return
+    fi
+
     # Organize the arguments into an associative array describing the module's parameters
     local -a MODULE_PARAMS=(
-        Prefix "${2}"
-        Suffix "${3}"
-        Color "${4}"
-        Shell "${5}"
-        Command "${6}"
+        Prefix "${PREFIX[2]}"
+        Suffix "${SUFFIX[2]}"
+        Color "${COLOR[2]}"
+        Shell "${${SHELL[1]:+true}:-false}"
+        Command "${COMMAND[2]}"
     )
 
     # In order to dynamically determine the module name, the module's associative array
     # must be declared, populated, and set to read-only in 3 distinct steps
-    declare -Ag "${MODULE_NAME}"
+    typeset -Ag ${MODULE_NAME}
     set -A ${MODULE_NAME} "${MODULE_PARAMS[@]}"
-    declare -gr "${MODULE_NAME}"
+    typeset -gr ${MODULE_NAME}
 
     # Add the name of the associative array for the new module to the modules list
-    CZP_PROMPT_MODULES+=("${MODULE_NAME}")
+    CZP_PROMPT_MODULES+=(${MODULE_NAME})
 
     # Re-configure prompt to account for the fact that we added a new module
     czp_configure_prompt
@@ -203,6 +259,34 @@ function precmd() {
         # Start the prompt module job
         async_job "${CZP_WORKER_NAME}" czp_prompt_module_async "${i}" "${MODULE[Prefix]}" "${MODULE[Suffix]}" "${MODULE[Color]}" "${MODULE[Shell]}" "${MODULE[Command]}"
     done
+}
+
+function czprompt() {
+    local -r USAGE_MSG="usage: czprompt <sub-menu>
+
+    add       add a new prompt module
+    modules   list all of the modules currently loaded into czprompt
+    prompt    print the prompt that czprompt is providing to Zsh
+    help      print this menu"
+
+    local -r SUBMENU_SELECTOR="${1}"
+    local -ar SUBMENU_ARGS=("${@:2}")
+    case "${SUBMENU_SELECTOR}" in
+        add)
+            __czp_add_module "${SUBMENU_ARGS[@]}"
+            ;;
+        modules)
+            # TODO: Implement this!
+            __czp_print_error "Feature not yet implemented!"
+            ;;
+        prompt)
+            print -r "${(qqqq%%)prompt}"
+            ;;
+        *)
+            __czp_print "${USAGE_MSG}"
+            ;;
+    esac
+    return
 }
 
 ###############
