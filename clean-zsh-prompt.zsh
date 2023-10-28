@@ -158,16 +158,11 @@ function czp_prompt_module_async_callback() {
     local -i HAS_NEXT="${6}"
     local -i PROMPT_ORDER_NUM="${RETURN_CODE}"
 
-    # Don't bother doing any more work if the module is empty
-    if [[ -z "${STDOUT_RESULT}" ]]; then
-        return
-    fi
-
     # Put the stdout output from the module into the appropriate $CZP_PSVAR slot
     CZP_PSVAR[${PROMPT_ORDER_NUM}]="${STDOUT_RESULT}"
 
     # Add the separator if we have output and aren't the last module
-    if [[ "${PROMPT_ORDER_NUM}" -lt "${#CZP_PROMPT_MODULES}" ]]; then
+    if [[ -n "${STDOUT_RESULT}" && "${PROMPT_ORDER_NUM}" -lt "${#CZP_PROMPT_MODULES}" ]]; then
         CZP_PSVAR[${PROMPT_ORDER_NUM}]+="${CZP_MODULE_SEPARATOR}"
     fi
 
