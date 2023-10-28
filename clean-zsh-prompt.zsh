@@ -70,7 +70,7 @@ function czp_add_module() {
     CZP_PROMPT_MODULES+=("${MODULE_NAME}")
 
     # Re-configure prompt to account for the fact that we added a new module
-    czp_configure_prompt 
+    czp_configure_prompt
 }
 
 # czp_configure_prompt()
