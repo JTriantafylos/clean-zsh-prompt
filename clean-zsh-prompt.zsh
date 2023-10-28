@@ -17,7 +17,7 @@ source ${0:a:h}/zsh-async/async.zsh
 declare -a CZP_PROMPT_MODULES=()
 
 # The string that will be printed out in front of where the shell input will actually show up
-declare CZP_PROMPT_CHARACTER="❯"
+declare CZP_PROMPT_CHARACTER="❯ "
 
 # The color that the prompt character will be displayed with
 declare CZP_PROMPT_CHARACTER_COLOR="green"
@@ -78,7 +78,7 @@ function czp_add_module() {
 # Configures the $prompt variable to support as many modules are currently loaded
 function czp_configure_prompt() {
     # Statically set the second line of the prompt to be the prompt character
-    psvar[1]="${CZP_PROMPT_CHARACTER} "
+    psvar[1]="${CZP_PROMPT_CHARACTER}"
 
     # Declare and clear the prompt
     declare -g prompt=""
