@@ -171,7 +171,9 @@ function czp_prompt_module_async_callback() {
 
     # Check if there are any more results buffered
     if [[ "${HAS_NEXT}" -eq 0 ]]; then
-        zle reset-prompt
+        # If not, reset the prompt and redisplay the command line
+        zle .reset-prompt
+        zle -R
     fi
 
 }
