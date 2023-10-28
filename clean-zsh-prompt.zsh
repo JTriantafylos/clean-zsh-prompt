@@ -52,7 +52,7 @@ function czp_add_module() {
     # Add the CZP_PROMPT_MODULE_ prefix to the unique module name argument
     local MODULE_NAME="${CZP_MODULE_NAME_PREFIX}${1}"
     # Organize the arguments into an associative array describing the module's parameters
-    local MODULE_PARAMS=(
+    local -a MODULE_PARAMS=(
         Prefix "${2}"
         Suffix "${3}"
         Color "${4}"
@@ -62,12 +62,12 @@ function czp_add_module() {
 
     # In order to dynamically determine the module name, the module's associative array
     # must be declared, populated, and set to read-only in 3 distinct steps
-    declare -Ag ${MODULE_NAME}
+    declare -Ag "${MODULE_NAME}"
     set -A ${MODULE_NAME} "${MODULE_PARAMS[@]}"
-    declare -gr ${MODULE_NAME}
+    declare -gr "${MODULE_NAME}"
 
     # Add the name of the associative array for the new module to the modules list
-    CZP_PROMPT_MODULES+=(${MODULE_NAME})
+    CZP_PROMPT_MODULES+=("${MODULE_NAME}")
 
     # Re-configure prompt to account for the fact that we added a new module
     czp_configure_prompt 
@@ -84,17 +84,17 @@ function czp_configure_prompt() {
     declare -g prompt=""
 
     # Add a %v prompt escape for each expected prompt module
-    for ((i = 1; i <= ${#CZP_PROMPT_MODULES}; i++)); do
+    for ((i = 1; i <= "${#CZP_PROMPT_MODULES}"; i++)); do
         # The quotes are surrounding the parameter expansion are necessary to allow prompt module fields to be empty strings
         # Parameter expansion explanation
         #  - P: Expand the names of the inner associative arrays (for each module) into the array values
         #  - k: Replace the array values with their respective key names
         #  - v: Add back the array values, following their respective key names
         #  - @: Since the whole expression is in double quotes, expand each array element into its own word, each surrounded by double quotes
-        local -A MODULE=("${(Pvk@)CZP_PROMPT_MODULES[i]}")
+        local -A MODULE=("${(Pvk@)CZP_PROMPT_MODULES[${i}]}")
         prompt+="%F{${MODULE[Color]}}%$(( ${i} + 1 ))v%f"
         # Add the separator if we aren't at the end
-        if [[ i -lt ${#CZP_PROMPT_MODULES} ]]; then
+        if [[ i -lt "${#CZP_PROMPT_MODULES}" ]]; then
             prompt+="${CZP_MODULE_SEPARATOR}"
         fi
     done
@@ -119,30 +119,31 @@ function czp_configure_prompt() {
 # $5 <Shell>: Whether or not the module's command field is to be interpreted as a Zsh prompt escape sequence, or to be executed as a shell command
 # $6 <Command>: The Zsh prompt escape sequence, or shell command that will be executed to provide the text content of the module
 function czp_prompt_module_async() {
-    local PROMPT_ORDER_NUM=$1
-    local PROMPT_MODULE_PREFIX=$2
-    local PROMPT_MODULE_SUFFIX=$3
-    local PROMPT_MODULE_COLOR=$4
-    local PROMPT_MODULE_SHELL=$5
-    local PROMPT_MODULE_COMMAND=$6
+    local -i PROMPT_ORDER_NUM="${1}"
+    local PROMPT_MODULE_PREFIX="${2}"
+    local PROMPT_MODULE_SUFFIX="${3}"
+    local PROMPT_MODULE_COLOR="${4}"
+    local PROMPT_MODULE_SHELL="${5}"
+    local PROMPT_MODULE_COMMAND="${6}"
 
     # Get the output for the module's command
-    if [[ ${PROMPT_MODULE_SHELL} == true ]]; then
+    local PROMPT_MODULE_CONTENT
+    if [[ "${PROMPT_MODULE_SHELL}" == true ]]; then
         # Evaluate $PROMPT_MODULE_COMMAND as a shell command
-        local PROMPT_MODULE_CONTENT="$(eval ${PROMPT_MODULE_COMMAND})"
+        PROMPT_MODULE_CONTENT="$(eval ${PROMPT_MODULE_COMMAND})"
     else
         # Interpret $PROMPT_MODULE_COMMAND as a Zsh prompt escape
-        local PROMPT_MODULE_CONTENT="${(%)PROMPT_MODULE_COMMAND}"
+        PROMPT_MODULE_CONTENT="${(%)PROMPT_MODULE_COMMAND}"
     fi
 
     # Don't generate any output if the content of the prompt was empty
-    if [[ -n $PROMPT_MODULE_CONTENT ]]; then
+    if [[ -n "${PROMPT_MODULE_CONTENT}" ]]; then
         # TODO: Consider whether %b or %q should be used here instead of %s
         printf "%s%s%s" "${PROMPT_MODULE_PREFIX}" "${PROMPT_MODULE_CONTENT}" "${PROMPT_MODULE_SUFFIX}"
     fi
 
     # Return the order number of this module so the callback knows where to put its output
-    return ${PROMPT_ORDER_NUM}
+    return "${PROMPT_ORDER_NUM}"
 }
 
 # czp_prompt_module_async_callback()
@@ -158,18 +159,18 @@ function czp_prompt_module_async() {
 # $5 <Stderr Result>: The resulting stderr output from the job execution
 # $6 <Has Next>: Whether or not another async job has completed
 function czp_prompt_module_async_callback() {
-    local JOB_NAME=$1
-    local RETURN_CODE=$2
-    local STDOUT_RESULT=$3
-    local EXEC_TIME=$4
-    local STDERR_RESULT=$5
-    local HAS_NEXT=$6
-    local PROMPT_ORDER_NUM=${RETURN_CODE}
+    local JOB_NAME="${1}"
+    local -i RETURN_CODE="${2}"
+    local STDOUT_RESULT="${3}"
+    local -F EXEC_TIME="${4}"
+    local STDERR_RESULT="${5}"
+    local -i HAS_NEXT="${6}"
+    local -i PROMPT_ORDER_NUM="${RETURN_CODE}"
 
-    psvar[$(( ${PROMPT_ORDER_NUM} + 1 ))]="${STDOUT_RESULT}"
+    psvar[$(( "${PROMPT_ORDER_NUM}" + 1 ))]="${STDOUT_RESULT}"
 
     # Check if there are any more results buffered
-    if [[ ${HAS_NEXT} == 0 ]]; then
+    if [[ "${HAS_NEXT}" -eq 0 ]]; then
         zle reset-prompt
     fi
 
@@ -191,14 +192,14 @@ function precmd() {
     async_register_callback "${CZP_WORKER_NAME}" czp_prompt_module_async_callback
 
     # Start async workers and jobs for each of the modules
-    for ((i = 1; i <= ${#CZP_PROMPT_MODULES}; i++)); do
+    for ((i = 1; i <= "${#CZP_PROMPT_MODULES}"; i++)); do
         # The quotes are surrounding the parameter expansion are necessary to allow prompt module fields to be empty strings
         # Parameter expansion explanation
         #  - P: Expand the names of the inner associative arrays (for each module) into the array values
         #  - k: Replace the array values with their respective key names
         #  - v: Add back the array values, following their respective key names
         #  - @: Since the whole expression is in double quotes, expand each array element into its own word, each surrounded by double quotes
-        local -A MODULE=("${(Pvk@)CZP_PROMPT_MODULES[i]}")
+        local -A MODULE=("${(Pvk@)CZP_PROMPT_MODULES[${i}]}")
 
         # Start the prompt module job
         async_job "${CZP_WORKER_NAME}" czp_prompt_module_async "${i}" "${MODULE[Prefix]}" "${MODULE[Suffix]}" "${MODULE[Color]}" "${MODULE[Shell]}" "${MODULE[Command]}"
