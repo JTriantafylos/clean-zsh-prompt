@@ -62,9 +62,9 @@ function czp_add_module() {
 
     # In order to dynamically determine the module name, the module's associative array
     # must be declared, populated, and set to read-only in 3 distinct steps
-    typeset -Ag ${MODULE_NAME}
+    declare -Ag ${MODULE_NAME}
     set -A ${MODULE_NAME} "${MODULE_PARAMS[@]}"
-    typeset -gr ${MODULE_NAME}
+    declare -gr ${MODULE_NAME}
 
     # Add the name of the associative array for the new module to the modules list
     CZP_PROMPT_MODULES+=(${MODULE_NAME})
@@ -80,8 +80,8 @@ function czp_configure_prompt() {
     # Statically set the second line of the prompt to be the prompt character
     psvar[1]="${CZP_PROMPT_CHARACTER} "
 
-    # Clear the prompt
-    prompt=""
+    # Declare and clear the prompt
+    declare -g prompt=""
 
     # Add a %v prompt escape for each expected prompt module
     for ((i = 1; i <= ${#CZP_PROMPT_MODULES}; i++)); do
