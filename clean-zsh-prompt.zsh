@@ -54,6 +54,16 @@ function __czp_print() {
     print -- "${1}"
 }
 
+# __czp_print_styled()
+#
+# Prints a message to stdout, with prompt escape sequences expanded
+#
+# $1 <Message>: The message to be printed to stdout, optionally containing prompt escape sequences that will be expanded
+#
+function __czp_print_styled() {
+    print -P -- "${1}"
+}
+
 # __czp_print_error()
 #
 # Prints a message to stderr
@@ -62,6 +72,25 @@ function __czp_print() {
 #
 function __czp_print_error() {
     >&2 print -- "${1}"
+}
+
+# __czp_print_module()
+#
+# Prints a description of the passed module to stdout
+#
+# $1 <Module>: The name of an associative array representing a module (generally an element of $CZP_PROMPT_MODULES)
+function __czp_print_module() {
+    # Determine the module name, with the prefix removed
+    local MODULE_NAME="${1#${CZP_MODULE_NAME_PREFIX}}"
+    # Construct the module's associative array from the passed name
+    local -A MODULE=("${(Pkv@)1}")
+    # Get module keys in sorted order
+    local -a MODULE_KEYS=("${(iPk@)1}")
+
+    # Print the module's name bold and underlined
+    __czp_print_styled "%U%B[${MODULE_NAME}]:%b%u"
+    # Print each of the module's parameters
+    for KEY in "${MODULE_KEYS[@]}"; do __czp_print "[${KEY}]=${MODULE[${KEY}]:-<empty>}"; done
 }
 
 # __czp_add_module()
@@ -290,8 +319,13 @@ function czprompt() {
             __czp_add_module "${SUBMENU_ARGS[@]}"
             ;;
         modules)
-            # TODO: Implement this!
-            __czp_print_error "Feature not yet implemented!"
+            # Iterate through each prompt module
+            for MODULE_NAME in "${CZP_PROMPT_MODULES[@]}"; do
+                # Print the module
+                __czp_print_module "${MODULE_NAME}"
+                # Print an empty line after each module if its not the last one
+                if [[ "${MODULE_NAME}" != "${CZP_PROMPT_MODULES[-1]}" ]]; then __czp_print ""; fi
+            done
             ;;
         prompt)
             print -r -- "${(qqqq%%)prompt}"
