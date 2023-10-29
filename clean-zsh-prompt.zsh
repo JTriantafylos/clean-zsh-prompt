@@ -132,13 +132,13 @@ function __czp_add_module() {
     CZP_PROMPT_MODULES+=(${MODULE_NAME})
 
     # Re-configure prompt to account for the fact that we added a new module
-    czp_configure_prompt
+    __czp_configure_prompt
 }
 
-# czp_configure_prompt()
+# __czp_configure_prompt()
 #
 # Configures the $prompt variable to support as many modules are currently loaded
-function czp_configure_prompt() {
+function __czp_configure_prompt() {
     # Declare and clear the prompt
     declare -g prompt=""
 
@@ -154,7 +154,7 @@ function czp_configure_prompt() {
 
 }
 
-# czp_prompt_module_async()
+# __czp_prompt_module_async()
 #
 # Asynchronously executes a prompt module's command so that it shows up in the prompt next time the prompt is refreshed
 # The callback function will handle putting the output into $CZP_PSVAR
@@ -166,7 +166,7 @@ function czp_configure_prompt() {
 # $4 <Color>: The module's desired text color
 # $5 <Shell>: Whether or not the module's command field is to be interpreted as a Zsh prompt escape sequence, or to be executed as a shell command
 # $6 <Command>: The Zsh prompt escape sequence, or shell command that will be executed to provide the text content of the module
-function czp_prompt_module_async() {
+function __czp_prompt_module_async() {
     local -i PROMPT_ORDER_NUM="${1}"
     local PROMPT_MODULE_PREFIX="${2}"
     local PROMPT_MODULE_SUFFIX="${3}"
@@ -193,7 +193,7 @@ function czp_prompt_module_async() {
     return "${PROMPT_ORDER_NUM}"
 }
 
-# czp_prompt_module_async_callback()
+# __czp_prompt_module_async_callback()
 #
 # Called after an async module is finished executing
 #
@@ -205,7 +205,7 @@ function czp_prompt_module_async() {
 # $4 <Exec Time>: The amount of time in floating-point seconds that the job execution took
 # $5 <Stderr Result>: The resulting stderr output from the job execution
 # $6 <Has Next>: Whether or not another async job has completed
-function czp_prompt_module_async_callback() {
+function __czp_prompt_module_async_callback() {
     local JOB_NAME="${1}"
     local -i RETURN_CODE="${2}"
     local STDOUT_RESULT="${3}"
@@ -231,6 +231,17 @@ function czp_prompt_module_async_callback() {
 
 }
 
+# __czp_init()
+#
+# Initializes the prompt and any supporting bits
+function __czp_init() {
+    # Initialize zsh-async
+    async_init
+
+    # Perform initial configuration of the prompt
+    __czp_configure_prompt
+}
+
 # precmd()
 #
 # Executed before each prompt
@@ -244,7 +255,7 @@ function precmd() {
     async_start_worker "${CZP_WORKER_NAME}"
 
     # Register a callback function to run when the async prompt module job completes
-    async_register_callback "${CZP_WORKER_NAME}" czp_prompt_module_async_callback
+    async_register_callback "${CZP_WORKER_NAME}" __czp_prompt_module_async_callback
 
     # Start async workers and jobs for each of the modules
     for ((i = 1; i <= "${#CZP_PROMPT_MODULES}"; i++)); do
@@ -257,10 +268,13 @@ function precmd() {
         local -A MODULE=("${(Pvk@)CZP_PROMPT_MODULES[${i}]}")
 
         # Start the prompt module job
-        async_job "${CZP_WORKER_NAME}" czp_prompt_module_async "${i}" "${MODULE[Prefix]}" "${MODULE[Suffix]}" "${MODULE[Color]}" "${MODULE[Shell]}" "${MODULE[Command]}"
+        async_job "${CZP_WORKER_NAME}" __czp_prompt_module_async "${i}" "${MODULE[Prefix]}" "${MODULE[Suffix]}" "${MODULE[Color]}" "${MODULE[Shell]}" "${MODULE[Command]}"
     done
 }
 
+# czprompt()
+#
+# The user-facing interface into clean-zsh-prompt
 function czprompt() {
     local -r USAGE_MSG="usage: czprompt <sub-menu>
 
@@ -293,8 +307,5 @@ function czprompt() {
 # MAIN SCRIPT #
 ###############
 
-# Initialize zsh-async
-async_init
-
-# Perform initial configuration of the prompt
-czp_configure_prompt
+# Initialize the prompt
+__czp_init
