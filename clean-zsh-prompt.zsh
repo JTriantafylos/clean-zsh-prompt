@@ -186,7 +186,7 @@ function __czp_prompt_module_async() {
 
     # Don't generate any output if the content of the prompt was empty
     if [[ -n "${PROMPT_MODULE_CONTENT}" ]]; then
-        print "${PROMPT_MODULE_PREFIX}%F{${PROMPT_MODULE_COLOR}}${PROMPT_MODULE_CONTENT}%f${PROMPT_MODULE_SUFFIX}"
+        print -- "${PROMPT_MODULE_PREFIX}%F{${PROMPT_MODULE_COLOR}}${PROMPT_MODULE_CONTENT}%f${PROMPT_MODULE_SUFFIX}"
     fi
 
     # Return the order number of this module so the callback knows where to put its output
@@ -294,7 +294,7 @@ function czprompt() {
             __czp_print_error "Feature not yet implemented!"
             ;;
         prompt)
-            print -r "${(qqqq%%)prompt}"
+            print -r -- "${(qqqq%%)prompt}"
             ;;
         *)
             __czp_print "${USAGE_MSG}"
