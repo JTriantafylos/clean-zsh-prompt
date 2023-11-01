@@ -96,6 +96,6 @@ czprompt add --name 'git_status' --color 'red' --shell --command '
 '
 ```
 
-# Contributing
+## Contributing
 
 If you have any fixes or improvements you would like to see in clean-zsh-prompt, feel free to raise an issue or open a pull request.
