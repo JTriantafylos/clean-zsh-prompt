@@ -6,7 +6,13 @@ clean-zsh-prompt works on the basis that each **module** (independent section of
 
 ## Installation
 
-Simply clone this repository to a location of your choosing, and add the following line to your `.zshrc`:
+Simply clone this repository to a location of your choosing:
+
+```sh
+git clone --recurse-submodules git@github.com:JTriantafylos/clean-zsh-prompt.git
+```
+
+and add the following line to your `.zshrc` (or equivalent):
 
 ```sh
 source <Path to repository>/clean-zsh-prompt.zsh
