@@ -1,0 +1,42 @@
+#compdef _czprompt czprompt
+
+# TODO: Come up with a method of auto-generating these completions
+
+# Main menu completions
+function _czprompt() {
+    local state
+    local line
+
+    _arguments -C \
+               "1: :->cmds" \
+               "*::arg:->args"
+
+    case "$state" in
+        cmds) # Sub-menu completions
+            _values "czprompt command" \
+                    "add[add a new prompt module]" \
+                    "modules[list all of the modules currently loaded into czprompt]" \
+                    "prompt[print the prompt that czprompt is providing to Zsh]" \
+                    "help[print this menu]" \
+            ;;
+        args) # Sub-menu argument completions
+            case "${line[1]}" in
+                add)
+                    _complete_czp_add_module 
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+# "add" sub-menu completions
+function _complete_czp_add_module() {
+    _arguments \
+        {-h,--help}"[prints this usage message]" \
+        "(--name)--name[the name of the module]" \
+        "(--prefix)--prefix[unstyled text that will be displayed before the module]" \
+        "(--suffix)--suffix[unstyled text that will be displayed after the module]" \
+        "(--color)--color[the color that the module's content will be displayed in]" \
+        {-s,--shell}"[treat the --command input as a shell command rather than a Zsh prompt escape sequence]" \
+        "(--command)--command[the Zsh prompt escape sequence, or shell command (depending on the --shell option), that will generate the module's content]"
+}

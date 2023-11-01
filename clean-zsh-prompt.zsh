@@ -341,5 +341,9 @@ function czprompt() {
 # MAIN SCRIPT #
 ###############
 
+# Add completions to fpath
+# TODO: Check if there is a "better" way to do this
+fpath+="${0:a:h}/completions"
+
 # Initialize the prompt
 __czp_init
