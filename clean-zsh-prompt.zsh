@@ -172,7 +172,7 @@ function __czp_configure_prompt() {
     declare -g prompt=""
 
     # Add a $CZP_PSVAR parameter for each expected prompt module
-    for ((i = 1; i <= "${#CZP_PROMPT_MODULES}"; i++)); do
+    for ((i = 1; i <= ${#CZP_PROMPT_MODULES}; i++)); do
         prompt+='${CZP_PSVAR['${i}']}'
     done
 
@@ -219,7 +219,7 @@ function __czp_prompt_module_async() {
     fi
 
     # Return the order number of this module so the callback knows where to put its output
-    return "${PROMPT_ORDER_NUM}"
+    return ${PROMPT_ORDER_NUM}
 }
 
 # __czp_prompt_module_async_callback()
@@ -241,18 +241,18 @@ function __czp_prompt_module_async_callback() {
     local -F EXEC_TIME="${4}"
     local STDERR_RESULT="${5}"
     local -i HAS_NEXT="${6}"
-    local -i PROMPT_ORDER_NUM="${RETURN_CODE}"
+    local -i PROMPT_ORDER_NUM=${RETURN_CODE}
 
     # Put the stdout output from the module into the appropriate $CZP_PSVAR slot
     CZP_PSVAR[${PROMPT_ORDER_NUM}]="${STDOUT_RESULT}"
 
     # Add the separator if we have output and aren't the last module
-    if [[ -n "${STDOUT_RESULT}" && "${PROMPT_ORDER_NUM}" -lt "${#CZP_PROMPT_MODULES}" ]]; then
+    if [[ -n "${STDOUT_RESULT}" && ${PROMPT_ORDER_NUM} -lt ${#CZP_PROMPT_MODULES} ]]; then
         CZP_PSVAR[${PROMPT_ORDER_NUM}]+="${CZP_MODULE_SEPARATOR}"
     fi
 
     # Check if there are any more results buffered
-    if [[ "${HAS_NEXT}" -eq 0 ]]; then
+    if [[ ${HAS_NEXT} -eq 0 ]]; then
         # If not, reset the prompt and redisplay the command line
         zle .reset-prompt
         zle -R
@@ -288,7 +288,7 @@ function precmd() {
     async_register_callback "${CZP_WORKER_NAME}" __czp_prompt_module_async_callback
 
     # Start async workers and jobs for each of the modules
-    for ((i = 1; i <= "${#CZP_PROMPT_MODULES}"; i++)); do
+    for ((i = 1; i <= ${#CZP_PROMPT_MODULES}; i++)); do
         # The quotes are surrounding the parameter expansion are necessary to allow prompt module fields to be empty strings
         # Parameter expansion explanation
         #  - P: Expand the names of the inner associative arrays (for each module) into the array values
