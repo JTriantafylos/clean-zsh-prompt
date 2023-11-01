@@ -277,7 +277,8 @@ function __czp_init() {
 # See https://zsh.sourceforge.io/Doc/Release/Functions.html#Hook-Functions
 function precmd() {
     # Stop the worker if it's currently running
-    # This needs to be done so update the worker environment to match the user's environment (e.g., to get proper $(pwd) output)
+    # This needs to be done so update the worker environment to match the user's environment (e.g., to get proper $(pwd) output),
+    # as well as to ensure any jobs that have not finished yet are stopped
     async_stop_worker "${CZP_WORKER_NAME}"
 
     # Start a fresh worker
