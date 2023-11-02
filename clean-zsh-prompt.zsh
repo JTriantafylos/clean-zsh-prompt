@@ -205,7 +205,7 @@ function __czp_remove_module() {
     # Iterate through each of the passed module names
     for NAME in "${MODULE_NAMES[@]}"; do
         # Prepend the module name prefix to the current name
-        PREFIXED_NAME="${CZP_MODULE_NAME_PREFIX}${NAME}"
+        local PREFIXED_NAME="${CZP_MODULE_NAME_PREFIX}${NAME}"
 
         # Check if the name is assigned to an existing module
         if [[ ! -v "${PREFIXED_NAME}" || "${CZP_PROMPT_MODULES[(r)${PREFIXED_NAME}]}" != "${PREFIXED_NAME}" ]]; then
