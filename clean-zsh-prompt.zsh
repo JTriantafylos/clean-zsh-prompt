@@ -313,7 +313,7 @@ function czprompt() {
 
     add       add a new prompt module
     modules   list all of the modules currently loaded into czprompt
-    prompt    print the prompt that czprompt is providing to Zsh
+    prompt    print the prompt that czprompt is providing to Zsh (useful for debugging)
     help      print this menu"
 
     local -r SUBMENU_SELECTOR="${1}"
