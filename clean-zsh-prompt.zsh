@@ -25,8 +25,11 @@ setopt promptsubst
 # The string that will be printed out in front of where the shell input will actually show up
 declare CZP_PROMPT_CHARACTER="❯ "
 
-# The color that the prompt character will be displayed with
-declare CZP_PROMPT_CHARACTER_COLOR="green"
+# The color that the prompt character will be displayed with if the last command completed with a return code of 0
+declare CZP_PROMPT_CHARACTER_COLOR_SUCCESS="green"
+
+# The color that the prompt character will be displayed with if the last command completed with a return code of anything but 0
+declare CZP_PROMPT_CHARACTER_COLOR_FAIL="red"
 
 # The string that will be placed between each prompt module
 declare CZP_MODULE_SEPARATOR=" "
@@ -179,7 +182,7 @@ function __czp_configure_prompt() {
     # Add a new line
     prompt+='${CZP_NEWLINE}'
     # Add the second line of the prompt, just the prompt character
-    prompt+='%F{${CZP_PROMPT_CHARACTER_COLOR}}${CZP_PROMPT_CHARACTER}%f'
+    prompt+='%F{%(?.${CZP_PROMPT_CHARACTER_COLOR_SUCCESS}.${CZP_PROMPT_CHARACTER_COLOR_FAIL})}${CZP_PROMPT_CHARACTER}%f'
 
 }
 
