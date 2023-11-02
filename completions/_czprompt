@@ -15,6 +15,7 @@ function _czprompt() {
         cmds) # Sub-menu completions
             _values "czprompt command" \
                     "add[add a new prompt module]" \
+                    "remove[remove prompt modules]" \
                     "modules[list all of the modules currently loaded into czprompt]" \
                     "prompt[print the prompt that czprompt is providing to Zsh]" \
                     "help[print this menu]" \
@@ -23,6 +24,9 @@ function _czprompt() {
             case "${line[1]}" in
                 add)
                     _complete_czp_add_module 
+                    ;;
+                remove)
+                    _complete_czp_remove_module
                     ;;
             esac
             ;;
@@ -39,4 +43,12 @@ function _complete_czp_add_module() {
         "(--color)--color[the color that the module's content will be displayed in]" \
         {-s,--shell}"[treat the --command input as a shell command rather than a Zsh prompt escape sequence]" \
         "(--command)--command[the Zsh prompt escape sequence, or shell command (depending on the --shell option), that will generate the module's content]"
+}
+
+# "remove" sub-menu completions
+function _complete_czp_remove_module() {
+    _arguments \
+        {-h,--help}"[prints this usage message]" \
+
+    _values -w "module name" "${(@)CZP_PROMPT_MODULES#${CZP_MODULE_NAME_PREFIX}}"
 }

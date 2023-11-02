@@ -161,10 +161,65 @@ function __czp_add_module() {
     # must be declared, populated, and set to read-only in 3 distinct steps
     typeset -Ag ${MODULE_NAME}
     set -A ${MODULE_NAME} "${MODULE_PARAMS[@]}"
-    typeset -gr ${MODULE_NAME}
 
     # Add the name of the associative array for the new module to the modules list
     CZP_PROMPT_MODULES+=(${MODULE_NAME})
+
+    # Re-configure prompt to account for the fact that we added a new module
+    __czp_configure_prompt
+}
+
+# __czp_remove_module()
+#
+# Removes an existing module from CZP
+#
+# $* <Arguments>: Arguments to be passed into zparseopts, and 1 or more names of modules to be removed, see $USAGE_MSG for more information
+function __czp_remove_module() {
+    local -r USAGE_MSG="usage: czprompt remove [<module names>]
+
+    -h, --help     prints this usage message"
+
+    # Option handling
+    local -a HELP
+    if ! zparseopts -F -- {h,-help}=HELP; then
+        __czp_print "${USAGE_MSG}"
+        return
+    fi
+
+    # Print usage message
+    if [[ -n "${HELP}" ]]; then
+        __czp_print "${USAGE_MSG}"
+        return
+    fi
+
+    # Extract the names from the positional parameters of the modules to be removed
+    local -a MODULE_NAMES=("${@}")
+
+    # Verify that at least 1 module name was provided
+    if [[ ${#MODULE_NAMES} -eq 0 ]]; then
+        __czp_print_error "error: at least one module name must be provided"
+        __czp_print_error "${USAGE_MSG}"
+        return
+    fi
+
+    # Iterate through each of the passed module names
+    for NAME in "${MODULE_NAMES[@]}"; do
+        # Prepend the module name prefix to the current name
+        PREFIXED_NAME="${CZP_MODULE_NAME_PREFIX}${NAME}"
+
+        # Check if the name is assigned to an existing module
+        if [[ ! -v "${PREFIXED_NAME}" || "${CZP_PROMPT_MODULES[(r)${PREFIXED_NAME}]}" != "${PREFIXED_NAME}" ]]; then
+            __czp_print "warning: no module named '${NAME}' exists"
+            continue
+        fi
+
+        # Unset the associative array containing the parameters for the module
+        unset "${NAME}"
+
+        # Remove the module's name from the $CZP_PROMPT_MODULES array
+        CZP_PROMPT_MODULES=("${(@)CZP_PROMPT_MODULES:#${PREFIXED_NAME}}")
+        __czp_print "successfully removed module '${NAME}'"
+    done;
 
     # Re-configure prompt to account for the fact that we added a new module
     __czp_configure_prompt
@@ -324,6 +379,9 @@ function czprompt() {
     case "${SUBMENU_SELECTOR}" in
         add)
             __czp_add_module "${SUBMENU_ARGS[@]}"
+            ;;
+        remove)
+            __czp_remove_module "${SUBMENU_ARGS[@]}"
             ;;
         modules)
             # Iterate through each prompt module
