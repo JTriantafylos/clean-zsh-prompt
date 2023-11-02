@@ -114,7 +114,10 @@ function __czp_add_module() {
 
     # Option handling
     local -a HELP NAME PREFIX SUFFIX COLOR SHELL COMMAND
-    zparseopts -E -F -D -K -- {h,-help}=HELP -name:=NAME -prefix:=PREFIX -suffix:=SUFFIX -color:=COLOR {s,-shell}=SHELL -command:=COMMAND
+    if ! zparseopts -E -F -D -K -- {h,-help}=HELP -name:=NAME -prefix:=PREFIX -suffix:=SUFFIX -color:=COLOR {s,-shell}=SHELL -command:=COMMAND; then
+        __czp_print "${USAGE_MSG}"
+        return
+    fi
 
     # Print usage message
     if [[ -n "${HELP}" ]]; then
