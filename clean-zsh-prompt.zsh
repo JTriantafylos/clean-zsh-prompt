@@ -171,7 +171,7 @@ function __czp_add_module() {
 
 # __czp_remove_module()
 #
-# Removes an existing module from CZP
+# Removes existing modules from CZP
 #
 # $* <Arguments>: Arguments to be passed into zparseopts, and 1 or more names of modules to be removed, see $USAGE_MSG for more information
 function __czp_remove_module() {
@@ -371,6 +371,7 @@ function czprompt() {
 
     add       add a new prompt module
     modules   list all of the modules currently loaded into czprompt
+    remove    remove prompt modules
     prompt    print the prompt that czprompt is providing to Zsh (useful for debugging)
     help      print this menu"
 
