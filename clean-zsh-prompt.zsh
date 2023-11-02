@@ -225,6 +225,64 @@ function __czp_remove_module() {
     __czp_configure_prompt
 }
 
+# __czp_list_modules()
+#
+# Lists CZP modules
+#
+# $* <Arguments>: Arguments to be passed into zparseopts, and 1 or more names of modules to be listed, see $USAGE_MSG for more information
+function __czp_list_modules() {
+    local -r USAGE_MSG="usage: czprompt modules [<options>] [<module names>]
+
+    -h, --help     prints this usage message
+    -s, --short    print only the names of the modules rather than all of their details"
+
+    # Option handling
+    local -a HELP SHORT
+    if ! zparseopts -D -F -- {h,-help}=HELP {s,-short}=SHORT; then
+        __czp_print "${USAGE_MSG}"
+        return
+    fi
+
+    # Print usage message
+    if [[ -n "${HELP}" ]]; then
+        __czp_print "${USAGE_MSG}"
+        return
+    fi
+
+    # Extract the names from the positional parameters of the modules to be listed
+    local -a MODULE_NAMES=("${@}")
+
+    # If no module names were specified, just list them all
+    if [[ ${#MODULE_NAMES} -eq 0 ]]; then
+        MODULE_NAMES=("${CZP_PROMPT_MODULES[@]#${CZP_MODULE_NAME_PREFIX}}")
+    fi
+
+    # Iterate through each module name
+    for NAME in "${MODULE_NAMES[@]}"; do
+        # Prepend the module name prefix to the current name
+        local PREFIXED_NAME="${CZP_MODULE_NAME_PREFIX}${NAME}"
+
+        # Check if the name is assigned to an existing module
+        if [[ ! -v "${PREFIXED_NAME}" || "${CZP_PROMPT_MODULES[(r)${PREFIXED_NAME}]}" != "${PREFIXED_NAME}" ]]; then
+            __czp_print "warning: no module named '${NAME}' exists"
+            continue
+        fi
+
+        # Check if the user specified "short" mode
+        if [[ -n "${SHORT}" ]]; then
+            # Print only the module name
+            __czp_print_styled "- %B${NAME}%b"
+        else
+            # Print all the module details
+            __czp_print_module "${PREFIXED_NAME}"
+
+            # Print an empty line after each module if its not the last one
+            if [[ "${NAME}" != "${MODULE_NAMES[-1]}" ]]; then __czp_print ""; fi
+        fi
+    done
+}
+
+
 # __czp_configure_prompt()
 #
 # Configures the $prompt variable to support as many modules are currently loaded
@@ -370,8 +428,8 @@ function czprompt() {
     local -r USAGE_MSG="usage: czprompt <sub-menu>
 
     add       add a new prompt module
-    modules   list all of the modules currently loaded into czprompt
     remove    remove prompt modules
+    modules   list the specified modules identified by name, or all loaded modules if no module names are specified
     prompt    print the prompt that czprompt is providing to Zsh (useful for debugging)
     help      print this menu"
 
@@ -385,13 +443,7 @@ function czprompt() {
             __czp_remove_module "${SUBMENU_ARGS[@]}"
             ;;
         modules)
-            # Iterate through each prompt module
-            for MODULE_NAME in "${CZP_PROMPT_MODULES[@]}"; do
-                # Print the module
-                __czp_print_module "${MODULE_NAME}"
-                # Print an empty line after each module if its not the last one
-                if [[ "${MODULE_NAME}" != "${CZP_PROMPT_MODULES[-1]}" ]]; then __czp_print ""; fi
-            done
+            __czp_list_modules "${SUBMENU_ARGS[@]}"
             ;;
         prompt)
             print -r -- "${(qqqq%%)prompt}"

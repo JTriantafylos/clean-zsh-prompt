@@ -16,7 +16,7 @@ function _czprompt() {
             _values "czprompt command" \
                     "add[add a new prompt module]" \
                     "remove[remove prompt modules]" \
-                    "modules[list all of the modules currently loaded into czprompt]" \
+                    "modules[list the specified modules identified by name, or all loaded modules if no module names are specified]" \
                     "prompt[print the prompt that czprompt is providing to Zsh]" \
                     "help[print this menu]" \
             ;;
@@ -27,6 +27,9 @@ function _czprompt() {
                     ;;
                 remove)
                     _complete_czp_remove_module
+                    ;;
+                modules)
+                    _complete_czp_list_modules
                     ;;
             esac
             ;;
@@ -49,6 +52,15 @@ function _complete_czp_add_module() {
 function _complete_czp_remove_module() {
     _arguments \
         {-h,--help}"[prints this usage message]" \
+
+    _values -w "module name" "${(@)CZP_PROMPT_MODULES#${CZP_MODULE_NAME_PREFIX}}"
+}
+
+# "modules" sub-menu completions
+function _complete_czp_list_modules() {
+    _arguments \
+        {-h,--help}"[prints this usage message]" \
+        {-s,--short}"[print only the names of the modules rather than all of their details]" \
 
     _values -w "module name" "${(@)CZP_PROMPT_MODULES#${CZP_MODULE_NAME_PREFIX}}"
 }
